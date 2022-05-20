@@ -44,27 +44,24 @@
       <div class="col-5">
         <h2>Sample 1</h2>
         <p>Description</p>
-        <ul class="list-group list-group-flush">
+        <div class="list-group list-group-flush">
           {% for x in song_list %}
-          <li class="list-group-item list-group-item-action">
-            <a class="list-group-item list-group-item-action" href="/1/{{ x.id }}">{{ x.name }}</a>
-          </li>
+          <a class="list-group-item list-group-item-action" href="/1/{{ x.id }}">
+            {{ x.name }} | {{ x.artist }}
+          </a>
           {% endfor %}
-          <!-- {% for x in year_list %}
-          <li class="list-group-item">{{x}}</li>
-          {% endfor %} -->
-        </ul>
-        <br />
-        <div class="btn-group">
-          <a href="/1/recommendation" class="btn btn-primary">Submit</a>
         </div>
+
+
       </div>
       <div class="col-5 border-start">
-        <ul class="list-group list-group-flush">
+        <div class="list-group list-group-flush">
           {% for x in recommend_list %}
-          <li class="list-group-item list-group-item-action">{{ x }}</li>
+          <a class="list-group-item list-group-item-action" href="/1/{{ x.id }}">
+            {{ x.name }} | {{ x.artist }}
+          </a>
           {% endfor %}
-        </ul>
+        </div>
       </div>
     </div>
     <div class="row align-items-end" style="position: fixed; bottom: 0px; width:100%">
