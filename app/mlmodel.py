@@ -49,8 +49,12 @@ def find_song_list_id(song_list):
             return None
 
         results = results['tracks']['items'][0]
+        
         track_id = results['id']
-        ls.append({"name" : s, "id" : track_id})
+        track_artist = results["artists"][0]["name"]
+    
+        ls.append({"name" : s, "id" : track_id, "artist" : track_artist})
+
     return ls
 
 
