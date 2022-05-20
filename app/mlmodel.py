@@ -21,7 +21,9 @@ warnings.filterwarnings("ignore")
 
 # data = pd.read_csv("/content/drive/MyDrive/Spotify-data/data.csv")
 
-data = pd.read_csv("/home/tieu/Documents/musicRecommender/app/data.csv")
+data = pd.read_csv("app/tracks_features.csv")
+data['unique'] = data['name'] + data['artists']
+data = data.drop_duplicates(subset='unique', keep='first')
 
 client_id = "a8ef1499b1f3468d9ce3186629adae0c"
 client_secret = "30423bf1520b4e00a5bc4e076fe870aa"
@@ -29,28 +31,28 @@ client_secret = "30423bf1520b4e00a5bc4e076fe870aa"
 client_credentials_manager = SpotifyClientCredentials(client_id,client_secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
-# def find_song(name, year):
-#     song_data = defaultdict()
-#     results = sp.search(q= 'track: {} year: {}'.format(name,year), limit=1)
-#     if results['tracks']['items'] == []:
-#         return None
+def find_song_id(name):
+    results = sp.search(q= 'track: {}'.format(name,), limit=1)
+    if results['tracks']['items'] == []:
+        return None
 
-#     results = results['tracks']['items'][0]
-#     track_id = results['id']
-#     audio_features = sp.audio_features(track_id)[0]
+    results = results['tracks']['items'][0]
+    track_id = results['id']
+    return track_id
 
-#     song_data['name'] = [name]
-#     song_data['year'] = [year]
-#     song_data['explicit'] = [int(results['explicit'])]
-#     song_data['duration_ms'] = [results['duration_ms']]
-#     song_data['popularity'] = [results['popularity']]
 
-#     for key, value in audio_features.items():
-#         song_data[key] = value
+def find_song_list_id(song_list):
+    ls = []
+    for s in song_list:
+        results = sp.search(q= 'track: {}'.format(s,), limit=1)
+        if results['tracks']['items'] == []:
+            return None
 
-#     return pd.DataFrame(song_data)
+        results = results['tracks']['items'][0]
+        track_id = results['id']
+        ls.append({"name" : s, "id" : track_id})
+    return ls
 
-# print(find_song("Make you feel my love", 2008))
 
 def find_song(name):
     song_data = defaultdict()
@@ -80,29 +82,29 @@ song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),
                                  ], verbose=False)
 model = song_cluster_pipeline
 
-X = data.select_dtypes(np.number)
+number_cols = ['danceability',
+ 'energy',
+ 'key',
+ 'loudness',
+ 'mode',
+ 'speechiness',
+ 'acousticness',
+ 'instrumentalness',
+ 'liveness',
+ 'valence',
+ 'tempo',
+ 'duration_ms',
+ 'time_signature']
+
+X = data[number_cols]
 number_cols = list(X.columns)
-# song_cluster_pipeline.fit(X)
 model.fit(X)
-# song_cluster_labels = song_cluster_pipeline.predict(X)
 song_cluster_labels = model.predict(X)
 data['cluster_label'] = song_cluster_labels
 
-number_cols = ['valence', 'year', 'acousticness', 'danceability', 
-    'duration_ms', 'energy', 'explicit',
-    'instrumentalness', 'key', 'liveness', 'loudness', 'mode', 
-    'popularity', 'speechiness', 'tempo']
 
 
-# def get_song_data(song, spotify_data):
-    
-#     try:
-#         song_data = spotify_data[(spotify_data['name'] == song['name']) 
-#                                 & (spotify_data['year'] == song['year'])].iloc[0]
-#         return song_data
-    
-#     except IndexError:
-#         return find_song(song['name'], song['year'])
+
 def get_song_data(song, spotify_data):
     
     try:
@@ -143,19 +145,3 @@ def flatten_dict_list(dict_list):
     return flattened_dict
 
 pickle.dump(model, open('mlmodel.sav','wb'))
-
-# def recommend_songs( song_list, spotify_data, n_songs=10):
-    
-#     metadata_cols = ['name', 'year', 'artists']
-#     song_dict = flatten_dict_list(song_list)
-    
-#     song_center = get_mean_vector(song_list, spotify_data)
-#     scaler = song_cluster_pipeline.steps[0][1]
-#     scaled_data = scaler.transform(spotify_data[number_cols])
-#     scaled_song_center = scaler.transform(song_center.reshape(1, -1))
-#     distances = cdist(scaled_song_center, scaled_data, 'cosine')
-#     index = list(np.argsort(distances)[:, :n_songs][0])
-    
-#     rec_songs = spotify_data.iloc[index]
-#     rec_songs = rec_songs[~rec_songs['name'].isin(song_dict['name'])]
-#     return rec_songs[metadata_cols].to_dict(orient='records')
