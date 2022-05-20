@@ -23,6 +23,9 @@ from app import mlmodel
 
 data = pd.read_csv("app/tracks_features.csv")
 
+def home(request):
+    return render(request, 'index.html')
+
 
 def recommendation_detail(request, sample_id):
     recommender = pickle.load(open('app/mlmodel.sav','rb'))
