@@ -26,10 +26,10 @@
     </div>
     <div class="row justify-content-center">
       <div class="col-2 border-end">
-        <ul class="nav nav-pills flex-column">
+        <ul class="list-group list-group-flush">
           {% for x in sample_list %}
-          <li class="nav-item">
-            <a class="nav-link" aria-current="page" href="/sample/{{ x.id }}/" onclick="setSampleId()">
+          <li class="list-group-item text-lg-center ">
+            <a class="list-group-item-action text-decoration-none fs-4" aria-current="page" href="/sample/{{ x.id }}/">
               {{ x.name }}
             </a>
           </li>
@@ -37,8 +37,8 @@
         </ul>
       </div>
       <div class="col-5">
-        <h2>Sample 1</h2>
-        <p>Description</p>
+        <h2 id="sample_name">Sample 1</h2>
+        <p id="sample_desc">Description</p>
         <ul class="list-group list-group-flush">
           {% for x in song_list %}
           <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
