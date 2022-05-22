@@ -13,7 +13,17 @@
 </head>
 
 <body>
-  <h1 class="text-bg-primary p-3">RecMusix</h1>
+  <div class="container-fluid bg-primary">
+    <div class="row g-3 align-items-center">
+      <div class="col-2">
+        <h1 class="text-bg-primary p-3">RecMusix</h1>
+      </div>
+      <div class="col-8">
+        <input type="text" placeholder="search" class="form-control" id="inputSearch" />
+      </div>
+    </div>
+  </div>
+
   <div class="container-fluid">
     <div class="row justify-content-center">
       <div class="col-2"></div>
@@ -43,7 +53,7 @@
           {% for x in song_list %}
           <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
             <a class="text-decoration-none text-secondary" href="/track/{{ x.id }}/">
-              {{ x.name }} | {{ x.artist }}
+              {{ x.name }} || {{ x.artist }}
             </a>
             <a href="/remove/{{ x.id }}/" class="btn btn-sm btn-danger bg-danger bg-opacity-75" data-bs-toggle="tooltip"
               data-bs-placement="left" title="Remove out of playlist">
@@ -58,7 +68,7 @@
           {% for x in recommend_list %}
           <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
             <a class="text-decoration-none text-secondary" href="/track/{{ x.id }}/">
-              {{ x.name }} | {{ x.artist }}
+              {{ x.name }} || {{ x.artist }}
             </a>
             <a href="/add/{{ x.id }}/" class="btn btn-sm btn-primary bg-primary bg-opacity-75" data-bs-toggle="tooltip"
               data-bs-placement="left" title="Add to playlist">
@@ -84,14 +94,22 @@
     var url = "{{ url }}";
     var e = document.getElementById("playsong");
     e.setAttribute("src", url);
-    var sampleId = "";
-    function setSampleId(id) {
-      sampleId = id;
-      console.log(sampleId);
-    };
+
+    var search_list = "{{ search_list }}";
+    console.log(search_list);
+
+    var input = document.getElementById("inputSearch");
+    input.addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        var value = input.value;
+        event.preventDefault();
+        var url = '/search/' + value + '/';
+        window.location.href = url;
+      }
+    })
+
   </script>
 </body>
-
 
 
 </html>
