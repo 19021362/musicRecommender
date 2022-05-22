@@ -25,9 +25,6 @@ from django.contrib import messages
 from app import mlmodel 
 
 
-data = pd.read_csv("app/tracks_features.csv")
-data['unique'] = data['name'] + data['artists']
-data = data.drop_duplicates(subset='unique', keep='first')
 search_cols = ['name', 'artists', 'id']
 search_list = data[search_cols]
 
@@ -50,6 +47,7 @@ def home(request):
 def recommendation_detail(request, sample_id):
     recommender = pickle.load(open('app/mlmodel.sav','rb'))
     play_list = Song_Sample.objects.filter(sample_id = sample_id)
+    
     sample = Sample.objects.get(id=sample_id)
     sample = model_to_dict(sample)
     request.session['sample'] = sample        
@@ -62,14 +60,14 @@ def recommendation_detail(request, sample_id):
             'sample' : sample,
         }
     else:
-        year_list = []
-        rec_songs_id = request.session.get('rec_songs_id')
+        rec_song_list = request.session.get('rec_song_list')
 
-        song_play_id = find_song_id(name=play_list[0])
+        song_play_id = find_song_id(id=play_list[0])
         url = "https://open.spotify.com/embed/track/" + song_play_id + "?utm_source=generator"
 
-        play_list_id = find_song_list_id(song_list=play_list)
-        n_songs = 10
+        song_list = find_list_song(song_list=play_list)
+        play_list_df = pd.DataFrame(song_list)
+        n_songs = 20
         
         metadata_cols = ['name', 'id', 'artists']
         
@@ -80,17 +78,16 @@ def recommendation_detail(request, sample_id):
         distances = cdist(scaled_song_center, scaled_data, 'cosine')
         index = list(np.argsort(distances)[:, :n_songs][0])
         rec_songs = data.iloc[index]
-        rec_songs = rec_songs[~rec_songs['name'].isin(play_list)]
-        rec_songs_id = find_rec_list_id(song_list=rec_songs['id'])
+        rec_songs = rec_songs[~rec_songs['id'].isin(play_list_df['id'])]
+
+        rec_song_list = find_list_song(song_list=rec_songs['id'])
         
-        
-        request.session['rec_songs_id'] = rec_songs_id
+        request.session['rec_song_list'] = rec_song_list
 
         context = {
             'sample_list': sample_list,
-            'song_list' : play_list_id,
-            'year_list' : year_list,
-            'recommend_list' : rec_songs_id,
+            'song_list' : song_list,
+            'recommend_list' : rec_song_list,
             'sample' : sample,
             'url' : url
         }
@@ -107,15 +104,14 @@ def choose_song(request, id):
     
     url = "https://open.spotify.com/embed/track/" + id + "?utm_source=generator"
 
-    song_list_id = find_song_list_id(song_list=song_list)
+    song_list = find_list_song(song_list=song_list)
     sample_list =  request.session.get('sample_list')
-    rec_songs_id = request.session.get('rec_songs_id')
+    rec_song_list = request.session.get('rec_song_list')
 
     context = {
         'sample_list': sample_list,
-        'song_list' : song_list_id,
-        'year_list' : year_list,
-        'recommend_list' : rec_songs_id,
+        'song_list' : song_list,
+        'recommend_list' : rec_song_list,
         'sample' : sample,
         'url' : url
     }
@@ -142,17 +138,37 @@ def remove_song_playlist(request, id):
     return recommendation_detail(request=request, sample_id=sample['id'])
 
 def search(request, subname):
-    res = search_list[search_list['name'].str.startswith(subname)].head(30)
+    res = search_list[search_list['name'].str.startswith(subname)].head(50)
     
-    re = find_rec_list_id(res['id'])
+    re = find_list_song(res['id'])
     re = sorted(re, key=lambda d: d['popularity'], reverse=True) 
-    #print(re)
-
+    
+    request.session['search_results'] = re
     sample_list = request.session.get('sample_list')
+    sample = request.session.get('sample')
 
     context = {
+        'sample' : sample,
         'sample_list': sample_list,
         'result' : re
+    }
+
+    return render(request, 'search.html', context)
+
+
+def search_choose_song(request, id):
+
+    url = "https://open.spotify.com/embed/track/" + id + "?utm_source=generator"
+    
+    re = request.session.get('search_results')
+    sample_list = request.session.get('sample_list')
+    sample = request.session.get('sample')
+
+    context = {
+        'sample' : sample,
+        'sample_list': sample_list,
+        'result' : re,
+        'url' : url
     }
 
     return render(request, 'search.html', context)

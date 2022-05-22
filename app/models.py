@@ -25,7 +25,7 @@ class Song(models.Model):
     tempo = models.FloatField()
 
     def __str__(self):
-        return self.name
+        return self.id
     
     def get_year(self):
         return self.year

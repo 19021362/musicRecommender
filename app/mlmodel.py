@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 
 # data = pd.read_csv("/content/drive/MyDrive/Spotify-data/data.csv")
 
-data = pd.read_csv("app/tracks_features.csv")
+data = pd.read_csv("app\data.csv")
 data['unique'] = data['name'] + data['artists']
 data = data.drop_duplicates(subset='unique', keep='first')
 
@@ -33,21 +33,23 @@ client_secret = "30423bf1520b4e00a5bc4e076fe870aa"
 client_credentials_manager = SpotifyClientCredentials(client_id,client_secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
-def find_song_id(name):
-    results = sp.search(q= 'track: {}'.format(name,), limit=1)
-    if results['tracks']['items'] == []:
+def find_song_id(id):
+
+    #results = sp.track(track_id=id)
+    results = sp.track(track_id= '{}'.format(id))
+    if results is None or results == {}:
         return None
 
-    results = results['tracks']['items'][0]
     track_id = results['id']
     return track_id
 
 
-def find_rec_list_id(song_list):
+def find_list_song(song_list):
     ls = []
     #print(song_list)
     for s in song_list:
-        results = sp.track(track_id=s)
+        #results = sp.track(track_id=s)
+        results = sp.track(track_id= '{}'.format(s))
 
         if results is None or results == {}:
             continue
@@ -61,36 +63,17 @@ def find_rec_list_id(song_list):
     return ls
 
 
-def find_song_list_id(song_list):
-    ls = []
-    #print(song_list)
-    for s in song_list:
-        results = sp.search(q= 'track: {}'.format(s), limit=1)
-
-        if results['tracks']['items'] == []:
-            continue
-
-        results = results['tracks']['items'][0]
-        track_name = results['name']
-        track_id = results['id']
-        track_artist = results["artists"][0]["name"]
-
-        ls.append({"name" : track_name, "id" : track_id, "artist" : track_artist})
-
-    return ls
-
-
-def find_song(name):
+def find_song(id):
     song_data = defaultdict()
-    results = sp.search(q= 'track: {}'.format(name,), limit=1)
-    if results['tracks']['items'] == []:
+    #results = sp.track(track_id=id)
+    results = sp.track(track_id= '{}'.format(id))
+    if results is None or results == {}:
         return None
 
-    results = results['tracks']['items'][0]
     track_id = results['id']
     audio_features = sp.audio_features(track_id)[0]
 
-    song_data['name'] = [name]
+    song_data['name'] = [results['name']]
     song_data['explicit'] = [int(results['explicit'])]
     song_data['duration_ms'] = [results['duration_ms']]
     song_data['popularity'] = [results['popularity']]
@@ -108,19 +91,10 @@ song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),
                                  ], verbose=False)
 model = song_cluster_pipeline
 
-number_cols = ['danceability',
- 'energy',
- 'key',
- 'loudness',
- 'mode',
- 'speechiness',
- 'acousticness',
- 'instrumentalness',
- 'liveness',
- 'valence',
- 'tempo',
- 'duration_ms',
- 'time_signature']
+number_cols = ['valence', 'year', 'acousticness', 'danceability', 
+    'duration_ms', 'energy', 'explicit',
+    'instrumentalness', 'key', 'liveness', 'loudness', 'mode', 
+    'popularity', 'speechiness', 'tempo']
 
 X = data[number_cols]
 number_cols = list(X.columns)
@@ -134,7 +108,7 @@ data['cluster_label'] = song_cluster_labels
 def get_song_data(song, spotify_data):
     
     try:
-        song_data = spotify_data[(spotify_data['name'] == str(song)) 
+        song_data = spotify_data[(spotify_data['id'] == str(song)) 
                                 ].iloc[0]
         return song_data
     
