@@ -1,6 +1,8 @@
 #Run this in terminal: 
 # pip3 install spotipy --upgrade
 
+from asyncio.windows_events import NULL
+from calendar import c
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import os
@@ -41,19 +43,39 @@ def find_song_id(name):
     return track_id
 
 
-def find_song_list_id(song_list):
+def find_rec_list_id(song_list):
     ls = []
+    #print(song_list)
     for s in song_list:
-        results = sp.search(q= 'track: {}'.format(s,), limit=1)
-        if results['tracks']['items'] == []:
-            return None
+        results = sp.track(track_id=s)
 
-        results = results['tracks']['items'][0]
-        
+        if results is None or results == {}:
+            continue
+
+        track_name = results['name']
         track_id = results['id']
         track_artist = results["artists"][0]["name"]
-    
-        ls.append({"name" : s, "id" : track_id, "artist" : track_artist})
+
+        ls.append({"name" : track_name, "id" : track_id, "artist" : track_artist})
+
+    return ls
+
+
+def find_song_list_id(song_list):
+    ls = []
+    #print(song_list)
+    for s in song_list:
+        results = sp.search(q= 'track: {}'.format(s), limit=1)
+
+        if results['tracks']['items'] == []:
+            continue
+
+        results = results['tracks']['items'][0]
+        track_name = results['name']
+        track_id = results['id']
+        track_artist = results["artists"][0]["name"]
+
+        ls.append({"name" : track_name, "id" : track_id, "artist" : track_artist})
 
     return ls
 
