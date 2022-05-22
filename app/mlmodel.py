@@ -55,8 +55,8 @@ def find_rec_list_id(song_list):
         track_name = results['name']
         track_id = results['id']
         track_artist = results["artists"][0]["name"]
-
-        ls.append({"name" : track_name, "id" : track_id, "artist" : track_artist})
+        track_pop = results["popularity"]
+        ls.append({"name" : track_name, "id" : track_id, "artist" : track_artist, "popularity" : track_pop})
 
     return ls
 
