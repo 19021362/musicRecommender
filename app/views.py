@@ -1,3 +1,4 @@
+from re import S
 from smtpd import MailmanProxy
 from this import s
 from tkinter import Frame
@@ -46,11 +47,7 @@ def home(request):
 def recommendation_detail(request, sample_id):
     recommender = pickle.load(open('app/mlmodel.sav','rb'))
     play_list = Song_Sample.objects.filter(sample_id = sample_id)
-    # sample_list_model = Sample.objects.all()
-    # sample_list = []
-    # for s in sample_list_model:
-    #     sample_list.append(model_to_dict(s))
-    #print(sample_list)
+    
 
     year_list = []
     rec_songs_id = request.session.get('rec_songs_id')
@@ -73,16 +70,19 @@ def recommendation_detail(request, sample_id):
     rec_songs = rec_songs[~rec_songs['name'].isin(play_list)]
     rec_songs_id = find_rec_list_id(song_list=rec_songs['id'])
     
-    #print(rec_songs_id)
+    
     sample_list =  request.session.get('sample_list')
     request.session['rec_songs_id'] = rec_songs_id
-    request.session['sample_id'] = sample_id
+    sample = Sample.objects.get(id=sample_id)
+    sample = model_to_dict(sample)
+    request.session['sample'] = sample
 
     context = {
         'sample_list': sample_list,
         'song_list' : play_list_id,
         'year_list' : year_list,
         'recommend_list' : rec_songs_id,
+        'sample' : sample,
         'url' : url
     }
 
@@ -91,13 +91,10 @@ def recommendation_detail(request, sample_id):
 
 def choose_song(request, id):
     recommender = pickle.load(open('app/mlmodel.sav','rb'))
-    sample_id = request.session.get('sample_id')
-    song_list = Song_Sample.objects.filter(sample_id = sample_id)
+    sample = request.session.get('sample')
+    song_list = Song_Sample.objects.filter(sample_id = sample['id'])
     year_list = []
-    # sample_list_model = Sample.objects.all()
-    # sample_list = []
-    # for s in sample_list_model:
-    #     sample_list.append(model_to_dict(s))
+    
     
     url = "https://open.spotify.com/embed/track/" + id + "?utm_source=generator"
 
@@ -110,6 +107,7 @@ def choose_song(request, id):
         'song_list' : song_list_id,
         'year_list' : year_list,
         'recommend_list' : rec_songs_id,
+        'sample' : sample,
         'url' : url
     }
 
@@ -117,19 +115,19 @@ def choose_song(request, id):
 
 
 def add_song_playlist(request, id):
-    sample_id = request.session.get('sample_id')
+    sample = request.session.get('sample')
     song = Song.objects.get(id=id)
-    sample = Sample.objects.get(id=sample_id)
+    sample = Sample.objects.get(id=sample['id'])
     sample_song = Song_Sample(song=song, sample=sample)
     sample_song.save()
 
-    return recommendation_detail(request=request, sample_id=sample_id)
+    return recommendation_detail(request=request, sample_id=sample['id'])
 
 
 def remove_song_playlist(request, id):
-    sample_id = request.session.get('sample_id')
+    sample = request.session.get('sample')
     song = Song.objects.get(id=id)
-    sample = Sample.objects.get(id=sample_id)
+    sample = Sample.objects.get(id=sample['id'])
     Song_Sample.objects.filter(song=song, sample=sample).first().delete()
     
-    return recommendation_detail(request=request, sample_id=sample_id)
+    return recommendation_detail(request=request, sample_id=sample['id'])
