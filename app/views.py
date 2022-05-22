@@ -1,7 +1,8 @@
-from re import S
+from re import S, T
+import re
 from smtpd import MailmanProxy
 from this import s
-from tkinter import Frame
+from tkinter import E, Frame
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.shortcuts import render
@@ -27,6 +28,8 @@ from app import mlmodel
 data = pd.read_csv("app/tracks_features.csv")
 data['unique'] = data['name'] + data['artists']
 data = data.drop_duplicates(subset='unique', keep='first')
+search_cols = ['name', 'artists', 'id']
+search_list = data[search_cols]
 
 def home(request):
     #sample_list = request.session.get('sample_list')
@@ -38,7 +41,7 @@ def home(request):
     request.session['sample_list'] = sample_list
 
     context = {
-        'sample_list': sample_list,
+        'sample_list': sample_list
     }
 
     return render(request, 'index.html', context)
@@ -47,44 +50,50 @@ def home(request):
 def recommendation_detail(request, sample_id):
     recommender = pickle.load(open('app/mlmodel.sav','rb'))
     play_list = Song_Sample.objects.filter(sample_id = sample_id)
-    
-
-    year_list = []
-    rec_songs_id = request.session.get('rec_songs_id')
-    #print(play_list)
-    song_play_id = find_song_id(name=play_list[0])
-    url = "https://open.spotify.com/embed/track/" + song_play_id + "?utm_source=generator"
-
-    play_list_id = find_song_list_id(song_list=play_list)
-    n_songs = 10
-    
-    metadata_cols = ['name', 'id', 'artists']
-    
-    song_center = get_mean_vector(play_list, data)
-    scaler = model.steps[0][1]
-    scaled_data = scaler.transform(data[number_cols])
-    scaled_song_center = scaler.transform(song_center.reshape(1, -1))
-    distances = cdist(scaled_song_center, scaled_data, 'cosine')
-    index = list(np.argsort(distances)[:, :n_songs][0])
-    rec_songs = data.iloc[index]
-    rec_songs = rec_songs[~rec_songs['name'].isin(play_list)]
-    rec_songs_id = find_rec_list_id(song_list=rec_songs['id'])
-    
-    
-    sample_list =  request.session.get('sample_list')
-    request.session['rec_songs_id'] = rec_songs_id
     sample = Sample.objects.get(id=sample_id)
     sample = model_to_dict(sample)
-    request.session['sample'] = sample
+    request.session['sample'] = sample        
+    sample_list =  request.session.get('sample_list')
 
-    context = {
-        'sample_list': sample_list,
-        'song_list' : play_list_id,
-        'year_list' : year_list,
-        'recommend_list' : rec_songs_id,
-        'sample' : sample,
-        'url' : url
-    }
+    if list(play_list) == []:
+        
+        context = {
+            'sample_list': sample_list,
+            'sample' : sample,
+        }
+    else:
+        year_list = []
+        rec_songs_id = request.session.get('rec_songs_id')
+
+        song_play_id = find_song_id(name=play_list[0])
+        url = "https://open.spotify.com/embed/track/" + song_play_id + "?utm_source=generator"
+
+        play_list_id = find_song_list_id(song_list=play_list)
+        n_songs = 10
+        
+        metadata_cols = ['name', 'id', 'artists']
+        
+        song_center = get_mean_vector(play_list, data)
+        scaler = model.steps[0][1]
+        scaled_data = scaler.transform(data[number_cols])
+        scaled_song_center = scaler.transform(song_center.reshape(1, -1))
+        distances = cdist(scaled_song_center, scaled_data, 'cosine')
+        index = list(np.argsort(distances)[:, :n_songs][0])
+        rec_songs = data.iloc[index]
+        rec_songs = rec_songs[~rec_songs['name'].isin(play_list)]
+        rec_songs_id = find_rec_list_id(song_list=rec_songs['id'])
+        
+        
+        request.session['rec_songs_id'] = rec_songs_id
+
+        context = {
+            'sample_list': sample_list,
+            'song_list' : play_list_id,
+            'year_list' : year_list,
+            'recommend_list' : rec_songs_id,
+            'sample' : sample,
+            'url' : url
+        }
 
     return render(request, 'index.html', context)
     
@@ -117,8 +126,8 @@ def choose_song(request, id):
 def add_song_playlist(request, id):
     sample = request.session.get('sample')
     song = Song.objects.get(id=id)
-    sample = Sample.objects.get(id=sample['id'])
-    sample_song = Song_Sample(song=song, sample=sample)
+    sample_model = Sample.objects.get(id=sample['id'])
+    sample_song = Song_Sample(song=song, sample=sample_model)
     sample_song.save()
 
     return recommendation_detail(request=request, sample_id=sample['id'])
@@ -127,7 +136,23 @@ def add_song_playlist(request, id):
 def remove_song_playlist(request, id):
     sample = request.session.get('sample')
     song = Song.objects.get(id=id)
-    sample = Sample.objects.get(id=sample['id'])
-    Song_Sample.objects.filter(song=song, sample=sample).first().delete()
+    sample_model = Sample.objects.get(id=sample['id'])
+    Song_Sample.objects.filter(song=song, sample=sample_model).first().delete()
     
     return recommendation_detail(request=request, sample_id=sample['id'])
+
+def search(request, subname):
+    res = search_list[search_list['name'].str.startswith(subname)].head(30)
+    
+    re = find_rec_list_id(res['id'])
+    re = sorted(re, key=lambda d: d['popularity'], reverse=True) 
+    #print(re)
+
+    sample_list = request.session.get('sample_list')
+
+    context = {
+        'sample_list': sample_list,
+        'result' : re
+    }
+
+    return render(request, 'search.html', context)
