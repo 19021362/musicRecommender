@@ -83,7 +83,7 @@
     <br />
     <br />
     <hr />
-    
+
 
     <div class="row align-items-end" style="position: fixed; bottom: 0px; width:100%">
       <div class="col">
@@ -100,11 +100,16 @@
     var iframe = document.getElementById("playsong");
     iframe.setAttribute("src", url);
 
-    console.log("{{ sample.name }}");
-    var sampleLink = document.getElementById("{{ sample.name }}");
-    console.log(sampleLink);
-    sampleLink.style.backgroundColor = "#0D6EFD";
-    sampleLink.style.color = "white";
+    var sample_name = "{{ sample.name }}"
+    var search = document.getElementById("inputSearch");
+    if (sample_name == "") {  
+      search.style.display = "none";
+    } else {
+      search.style.display = "block";
+      var sampleLink = document.getElementById(sample_name);
+      sampleLink.style.backgroundColor = "#0D6EFD";
+      sampleLink.style.color = "white";
+    }
 
     var search_list = "{{ search_list }}";
     console.log(search_list);

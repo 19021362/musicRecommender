@@ -25,8 +25,8 @@ from django.contrib import messages
 from app import mlmodel 
 
 
-search_cols = ['name', 'artists', 'id']
-search_list = data[search_cols]
+search_cols = ['name', 'artists', 'id', 'popularity']
+search_list = data[search_cols].sort_values(by=['popularity'], ascending=0)
 
 def home(request):
     #sample_list = request.session.get('sample_list')
@@ -138,11 +138,11 @@ def remove_song_playlist(request, id):
     return recommendation_detail(request=request, sample_id=sample['id'])
 
 def search(request, subname):
-    res = search_list[search_list['name'].str.startswith(subname)].head(50)
+    res = search_list[search_list['name'].str.startswith(subname)]
     
-    re = find_list_song(res['id'])
-    re = sorted(re, key=lambda d: d['popularity'], reverse=True) 
-    
+    # re = find_list_song(res['id'])
+    # re = sorted(re, key=lambda d: d['popularity'], reverse=True) 
+    re = res.to_dict('records');
     request.session['search_results'] = re
     sample_list = request.session.get('sample_list')
     sample = request.session.get('sample')
