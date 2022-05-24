@@ -91,7 +91,7 @@ song_cluster_pipeline = Pipeline([('scaler', StandardScaler()),
                                  ], verbose=False)
 model = song_cluster_pipeline
 
-number_cols = ['valence', 'year', 'acousticness', 'danceability', 
+number_cols = ['valence', 'acousticness', 'danceability', 
     'duration_ms', 'energy', 'explicit',
     'instrumentalness', 'key', 'liveness', 'loudness', 'mode', 
     'popularity', 'speechiness', 'tempo']
